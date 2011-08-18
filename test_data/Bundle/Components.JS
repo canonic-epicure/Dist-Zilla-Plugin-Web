@@ -1,9 +1,9 @@
 COMPONENTS = {
 	// a comment
 	
-    "EvenPlusOdd" : {
+    EvenPlusOdd : {
         
-        "saveAs"    : "even-plus-odd.js",
+        saveAs      : "even-plus-odd.js",
         
         "contains"  : [
             "+Even",
@@ -58,9 +58,9 @@ COMPONENTS = {
     },
     
     
-    "Part23" : {
+    Part23 : {
         
-        "contains" : [
+        contains : [
             "node_modules/some_module/File1.js",
             "Part2.File3",
             

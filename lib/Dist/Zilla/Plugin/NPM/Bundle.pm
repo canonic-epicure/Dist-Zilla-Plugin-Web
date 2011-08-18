@@ -9,9 +9,8 @@ with 'Dist::Zilla::Role::FileGatherer';
 
 use Dist::Zilla::File::FromCode;
 
-use JSON 2;
+use JSON -support_by_pp, -no_export;
 use Path::Class;
-use Capture::Tiny qw/capture/;
 use IPC::Open2;
 use File::ShareDir;
 
@@ -19,7 +18,7 @@ has 'filename' => (
     isa     => 'Str',
     is      => 'rw',
     
-    default => 'Components.JS'
+    default => 'components.json'
 );
 
 
@@ -52,8 +51,10 @@ sub gather_files {
     #extracting from outermost {} brackets
     $content =~ m/(\{.*\})/s;
     $content = $1;
+    
+    my $json = JSON->new->relaxed->allow_singlequote->allow_barekey;
 
-    my $components = decode_json $content;
+    my $components = $json->decode($content);
     
     foreach my $component (keys(%$components)) {
         $self->process_component($components, $component);
