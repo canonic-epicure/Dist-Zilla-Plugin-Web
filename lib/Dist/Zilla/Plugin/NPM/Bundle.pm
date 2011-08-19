@@ -165,9 +165,11 @@ sub get_file_content {
         }
     }
     
-    die "Can't find file [$file_name] in [$component]" unless $found;
+    return $found->content if $found;
     
-    return $found->content;
+    die "Can't find file [$file_name] in [$component]" unless -e $file_name;
+    
+    return file($file_name)->slurp . '';
 }
 
 
