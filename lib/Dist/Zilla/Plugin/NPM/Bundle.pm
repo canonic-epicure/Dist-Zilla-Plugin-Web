@@ -195,58 +195,68 @@ __PACKAGE__->meta->make_immutable(inline_constructor => 0);
 
 In your F<dist.ini>:
 
-    [JSAN::Bundle]
+    [NPM::Bundle]
+    filename = components.json ; default
 
-In your F<Components.JS>:
+In your F<components.json>:
 
-    COMPONENTS = {
+    {
         
-        "Core" : [
-            "KiokuJS.Reference",
+        Core : {
+            contains    : [
+                "KiokuJS.Reference",
+                
+                "KiokuJS.Exception",
+                "KiokuJS.Exception.Network",
+                "KiokuJS.Exception.Format",
+                "KiokuJS.Exception.Overwrite",
+                "KiokuJS.Exception.Update",
+                "KiokuJS.Exception.Remove",
+                "KiokuJS.Exception.LookUp",
+                "KiokuJS.Exception.Conflict"
+            ],
+        }
+        
+        
+        Prereq : {
             
-            "KiokuJS.Exception",
-            "KiokuJS.Exception.Network",
-            "KiokuJS.Exception.Format",
-            "KiokuJS.Exception.Overwrite",
-            "KiokuJS.Exception.Update",
-            "KiokuJS.Exception.Remove",
-            "KiokuJS.Exception.LookUp",
-            "KiokuJS.Exception.Conflict"
-        ],
+            contains    : [
+                "node_modules/task-joose-stable/joose-stable.js",
+                "node_modules/joosex-attribute/joosex-attribute.js"
+            ],
+        },
         
         
-        "Prereq" : [
-            "=/home/cleverguy/js/some/file.js",
-            "jsan:Task.Joose.Core",
-            "jsan:Task.JooseX.Attribute.Bootstrap",
+        All : {
+            saveAs      : 'kiokujs-all.js',
             
-            "jsan:Task.JooseX.Namespace.Depended.NodeJS",
+            contains    : [
+                "+Core",
+                "+Prereq"
+            ]
+        },
+        
+        
+        AllMin : {
+            saveAs      : 'kiokujs-all-min.js',
             
-            "jsan:Task.JooseX.CPS.All",
-            "jsan:Data.UUID",
-            "jsan:Data.Visitor"
-        ],
-        
-        
-        "All" : [
-            "+Core",
-            "+Prereq"
-        ]
+            minify      : 'yui',
+            
+            contains    : [
+                "+All"
+            ]
+        }
     } 
     
 
 
 =head1 DESCRIPTION
 
-This plugins concatenates several source files into single bundle using the information from Components.JS file.
+This plugins concatenates several source files into single bundle using the information from components.json file.
 
 This files contains a simple JavaScript assignment (to allow inclusion via <script> tag) of the JSON structure.
 
 First level entries of the JSON structure defines a bundles. Each bundle is an array of entries. 
-
-Entry, starting with the "=" prefix denotes the file from the filesystem. 
-
-Entry, starting with the "jsan:" prefix denotes the module from the jsan library. See L<Module::Build::JSAN::Installable>.
 
 Entry, starting with the "+" prefix denotes the content of another bundle.
 
