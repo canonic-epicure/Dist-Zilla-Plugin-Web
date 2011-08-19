@@ -7,7 +7,7 @@ use Dist::Zilla::Tester;
 
 {
     my $tzil = Dist::Zilla::Tester->from_config(
-        { dist_root => 'test_data/Bundle' },
+        { dist_root => 'test_data/NPM-Bundle' },
     );
 
     $tzil->build;

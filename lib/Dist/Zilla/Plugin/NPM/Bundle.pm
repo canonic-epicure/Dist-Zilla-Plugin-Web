@@ -5,7 +5,7 @@ package Dist::Zilla::Plugin::NPM::Bundle;
 use Moose;
 
 with 'Dist::Zilla::Role::FileGatherer';
-
+with 'Dist::Zilla::Role::FileMunger';
 
 use Dist::Zilla::File::FromCode;
 
@@ -39,6 +39,12 @@ has 'bundleFiles' => (
 
 #================================================================================================================================================================================================================================================
 sub gather_files {
+}
+
+
+#================================================================================================================================================================================================================================================
+# need to build bundles in the "munge" phase - to allow other munge plugins to modify the sources
+sub munge_files {
     my $self = shift;
     
     return unless -f $self->filename;
@@ -136,16 +142,34 @@ sub get_entry_content {
     
     } elsif ($entry !~ /\// && $entry !~ /\.js$/ && $entry !~ /\.css$/) {
         
-        my $file_name = $self->entry_to_filename($entry);
-        
-        die "Can't find file [$file_name] in [$component]" if !-e $file_name;
-        
-        return file($file_name)->slurp;
+        return $self->get_file_content($self->entry_to_filename($entry), $component);
         
     } else {
-        return file($entry)->slurp;
+        return $self->get_file_content($entry, $component);
     } 
 }
+
+
+#================================================================================================================================================================================================================================================
+sub get_file_content {
+    my ($self, $file_name, $component) = @_;
+    
+    my $found;
+    
+    for my $file (@{$self->zilla->files}) {
+        
+        if ($file->name eq $file_name) {
+            $found = $file;
+            
+            last;
+        }
+    }
+    
+    die "Can't find file [$file_name] in [$component]" unless $found;
+    
+    return $found->content;
+}
+
 
 #================================================================================================================================================================================================================================================
 sub entry_to_filename {
