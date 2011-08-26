@@ -1,6 +1,8 @@
-Release history for Dist::Zilla::Plugin::NPM
+Release history for Dist::Zilla::Plugin::Web
 
 {{$NEXT}}
+
+        renamed to Dist-Zilla-Plugin-Web
 
 0.0.1     2011-08-13 16:43
 
