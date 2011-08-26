@@ -6,7 +6,7 @@ Build
 _build
 *.tar.gz
 .lwpcookies
-Dist-Zilla-Plugin-NPM-*
+Dist-Zilla-Plugin-Web-*
 cover_db
 .project
 .externalToolBuilders

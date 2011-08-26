@@ -1,4 +1,4 @@
-package Dist::Zilla::Plugin::NPM::Package;
+package Dist::Zilla::Plugin::Web::NPM::Package;
 
 # ABSTRACT: Generate the `package.json` file, suitable for `npm` package manager 
 

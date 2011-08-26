@@ -1,4 +1,4 @@
-package Dist::Zilla::Plugin::NPM::Bundle;
+package Dist::Zilla::Plugin::Web::Bundle;
 
 # ABSTRACT: Bundle the library files into "tasks", using information from Components.JS 
 
