@@ -31,7 +31,7 @@ has 'lib_dir' => (
 );
 
 
-has 'bundleFiles' => (
+has 'bundle_files' => (
     is      => 'rw',
     
     default => sub { {} }
@@ -87,7 +87,7 @@ sub process_component {
     
     my $saveAs          = $componentInfo->{ saveAs };
     
-    $self->bundleFiles->{ $component } = Dist::Zilla::File::FromCode->new({
+    $self->bundle_files->{ $component } = Dist::Zilla::File::FromCode->new({
         
         name => $saveAs || "foo.js",
         
@@ -130,7 +130,7 @@ sub process_component {
     });
     
     # only store the bundles that has "saveAs"     
-    $self->add_file($self->bundleFiles->{ $component }) if $saveAs;
+    $self->add_file($self->bundle_files->{ $component }) if $saveAs;
 }
 
 
@@ -144,7 +144,7 @@ sub get_entry_content {
         
     } elsif ($entry =~ /^\+(.+)/) {
         
-        my $bundleFile  = $self->bundleFiles->{ $1 };
+        my $bundleFile  = $self->bundle_files->{ $1 };
         
         die "Reference to non-existend bundle [$1] from [$component]" if !$bundleFile;
         

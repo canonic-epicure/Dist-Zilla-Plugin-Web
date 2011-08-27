@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package Dist::Zilla::Plugin::Web;
 
-# ABSTRACT: Collectiof of web-related plugins for DZil
+# ABSTRACT: Collection of web-related plugins for DZil
 
 
 1;
