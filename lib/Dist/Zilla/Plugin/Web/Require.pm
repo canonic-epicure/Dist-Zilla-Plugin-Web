@@ -48,12 +48,19 @@ has 'extra_safe_wrapping' => (
 );
 
 
-
-has 'processed_files' => (
+has 'raw_requires_cache' => (
     is      => 'rw',
     
     default => sub { {} }
 );
+
+
+has 'all_resolved_requires_cache' => (
+    is      => 'rw',
+    
+    default => sub { {} }
+);
+
 
 
 #================================================================================================================================================================================================================================================
@@ -156,6 +163,10 @@ REQUIRE
 sub collect_all_resolved_requires {
     my ($self, $file_name, $source_files) = @_;
     
+    my $cache   = $self->all_resolved_requires_cache;
+    
+    return $cache->{ $file_name } if $cache->{ $file_name };
+    
     $source_files ||= [];
     
     # do not recurse in case of cycles
@@ -171,7 +182,7 @@ sub collect_all_resolved_requires {
     
     my %requires = map { $_ => 0 } @requires;
     
-    return grep { $_ } %requires;
+    return $cache->{ $file_name } = grep { $_ } %requires;
 }
 
 
@@ -318,11 +329,11 @@ sub get_dzil_file {
 sub get_require_statements_of_file {
     my ($self, $file_name)    = @_;
     
-    my $processed_files = $self->processed_files;
+    my $raw_requires_cache = $self->raw_requires_cache;
     
-    return $processed_files->{ $file_name } if defined($processed_files->{ $file_name });
+    return $raw_requires_cache->{ $file_name } if defined($raw_requires_cache->{ $file_name });
     
-    return $processed_files->{ $file_name } = $self->get_require_statements($self->get_content_of($file_name));
+    return $raw_requires_cache->{ $file_name } = $self->get_require_statements($self->get_content_of($file_name));
 }
 
 
