@@ -8,6 +8,7 @@ with 'Dist::Zilla::Role::FileGatherer';
 with 'Dist::Zilla::Role::FileMunger';
 
 use Dist::Zilla::File::FromCode;
+use Dist::Zilla::File::InMemory;
 
 use JSON;
 use Path::Class;
@@ -20,8 +21,17 @@ has 'file_match' => (
     isa     => 'Str',
     is      => 'rw',
     
-    default => sub { [ '^lib/.*\.js$' ] } 
+    default => sub { [ '^lib/.*\.js(on)?$' ] } 
 );
+
+
+has 'exculde_match' => (
+    isa     => 'Str',
+    is      => 'rw',
+    
+    default => sub { [] } 
+);
+
 
 
 has 'quick_n_dirty' => (
@@ -63,11 +73,14 @@ sub munge_files {
     
     # never match (at least the filename characters)
     my $matches_regex = qr/\000/;
+    my $exclude_regex = qr/\000/;
 
     $matches_regex = qr/$_|$matches_regex/ for ($self->file_match->flatten);
+    $exclude_regex = qr/$_|$exclude_regex/ for ($self->exculde_match->flatten);
 
     for my $file ($self->zilla->files->flatten) {
         next unless $file->name =~ $matches_regex;
+        next if     $file->name =~ $exclude_regex;
         
         $self->process_file($file);
     }
@@ -76,9 +89,10 @@ sub munge_files {
 
 #================================================================================================================================================================================================================================================
 sub process_file {
-    my ($self, $file_name)   = @_;
+    my ($self, $file)   = @_;
     
-    my $content         = $self->get_content_of($file_name);
+    my $content         = $file->content;
+    my $file_name       = $file->name;
     
     my @requires        = $self->collect_all_resolved_requires($file_name);
     
@@ -126,12 +140,13 @@ REQUIRE
         
     }, \$res) || die $tt->error(), "\n";
     
-#    $file->content($res);
+    $file->content($res);
     
     $self->add_file(Dist::Zilla::File::FromCode->new({
-        name => $file_name,
+        name => "$file_name.info",
         
         code => sub {
+            JSON->new->utf8(1)->pretty(1)->encode($file_info);
         }
     }))
 }
@@ -160,28 +175,72 @@ sub collect_all_resolved_requires {
 }
 
 
+#================================================================================================================================================================================================================================================
+sub resolve_in_file_system {
+    my ($self, $file_name, $not_dir)   = @_;
+    
+    return $file_name if $self->file_exists($file_name);
+    
+    return "$file_name.js" if $self->file_exists("$file_name.js");
+    
+    unless ($not_dir) {
+        if ($self->directory_exists($file_name)) {
+            
+            my $package_json_file = dir($file_name)->file('package.json');
+            
+            if ($self->file_exists($package_json_file)) {
+                my $package_json    = JSON->new->decode($self->get_content_of($package_json_file));
+                
+                return $self->resolve_require($file_name, $package_json->{ main }, 1) if $package_json->{ main }; 
+            }
+            
+            return $self->resolve_require($file_name, 'index', 1)
+        }
+    }
+    
+    return undef
+}
+
 
 #================================================================================================================================================================================================================================================
 sub resolve_require {
-    my ($self, $base_file_name, $require)   = @_;
+    my ($self, $base_file_name, $require, $not_dir)   = @_;
     
     $require =~ m!^  (\./|/|\.\./)?  (\.[^.]+)?  $!x;
     
     # require absolute
     if ($1 eq '/') {
         
+        return $self->resolve_in_file_system($require, $not_dir);
+        
     } elsif ($1) {
         # relative require
         my $resolved = $self->cleanup_file_name(file($base_file_name)->dir->file($require)->cleanup . '');
 
-#        if ($self->has_file($resolved)) {}
+        return $self->resolve_in_file_system($resolved, $not_dir);
         
     } else {
         # require built-in module or module from "node_modules"
         
+        my @node_modules;
         
+        my $dir = file($base_file_name)->dir;
+        
+        while ($dir =~ /((.*)(?:^|\/)node_modules)(?=\/|$)/) {
+            
+            push @node_modules, $1;
+            
+            $dir    = $2
+        }
+        
+        foreach my $node_module_dir (@node_modules) {
+            my $resolved = $self->resolve_in_file_system(dir($node_module_dir)->file($require));
+            
+            return $resolved if $resolved;
+        }
+        
+        return undef;
     }
-    
 }
 
 
@@ -200,13 +259,42 @@ sub cleanup_file_name {
 }
 
 
+#================================================================================================================================================================================================================================================
+sub file_exists {
+    my ($self, $file_name)      = @_;
+    
+    return 1 if $self->get_dzil_file($file_name);
+    return 1 if -e $file_name;
+    
+    return 0; 
+}
+
+
+#================================================================================================================================================================================================================================================
+sub directory_exists {
+    my ($self, $file_name)      = @_;
+    
+    return 1 if $self->get_dzil_file(qr!$file_name/.+!);
+    return 1 if -d $file_name;
+    
+    return 0; 
+}
+
+
 
 #================================================================================================================================================================================================================================================
 sub get_content_of {
     my ($self, $file_name)      = @_;
     
-#    if
+    my $dzil_file       = $self->get_dzil_file($file_name);
+    
+    return $dzil_file->content if $dzil_file;
+    
+    die "Can't find file [$file_name]" unless -e $file_name;
+    
+    return file($file_name)->slurp; 
 }
+
 
 
 #================================================================================================================================================================================================================================================
