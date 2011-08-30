@@ -17,8 +17,9 @@ use IPC::Open2;
 use Template;
 
 
+use XXX -with => 'Data::Dumper';
+
 has 'file_match' => (
-    isa     => 'Str',
     is      => 'rw',
     
     default => sub { [ '^lib/.*\.js(on)?$' ] } 
@@ -26,7 +27,6 @@ has 'file_match' => (
 
 
 has 'exculde_match' => (
-    isa     => 'Str',
     is      => 'rw',
     
     default => sub { [] } 
@@ -82,10 +82,10 @@ sub munge_files {
     my $matches_regex = qr/\000/;
     my $exclude_regex = qr/\000/;
 
-    $matches_regex = qr/$_|$matches_regex/ for ($self->file_match->flatten);
-    $exclude_regex = qr/$_|$exclude_regex/ for ($self->exculde_match->flatten);
+    $matches_regex = qr/$_|$matches_regex/ for (@{$self->file_match});
+    $exclude_regex = qr/$_|$exclude_regex/ for (@{$self->exculde_match});
 
-    for my $file ($self->zilla->files->flatten) {
+    for my $file (@{$self->zilla->files}) {
         next unless $file->name =~ $matches_regex;
         next if     $file->name =~ $exclude_regex;
         
@@ -172,10 +172,12 @@ sub collect_all_resolved_requires {
     # do not recurse in case of cycles
     return () if grep { $_ eq $file_name } @$source_files;
     
-    my @requires        = $self->get_require_statements_of_file($file_name);
+    my @requires        = @{$self->get_require_statements_of_file($file_name)};
     
     foreach my $require (@requires) {
         my $resolved    = $self->resolve_require($file_name, $require);
+        
+        die "Can't resolve require string: require('$require') in [$file_name]" if !$resolved;
         
         push @requires, $resolved, $self->collect_all_resolved_requires($resolved, \($file_name, @$source_files));
     }
@@ -217,14 +219,16 @@ sub resolve_in_file_system {
 sub resolve_require {
     my ($self, $base_file_name, $require, $not_dir)   = @_;
     
-    $require =~ m!^  (\./|/|\.\./)?  (\.[^.]+)?  $!x;
+    $require =~ m!^(\./|/|\.\./)?(\.[^.]+)?$!;
+    
+    my $type = $1 || '';
     
     # require absolute
-    if ($1 eq '/') {
+    if ($type eq '/') {
         
         return $self->resolve_in_file_system($require, $not_dir);
         
-    } elsif ($1) {
+    } elsif ($type) {
         # relative require
         my $resolved = $self->cleanup_file_name(file($base_file_name)->dir->file($require)->cleanup . '');
 
@@ -235,7 +239,7 @@ sub resolve_require {
         
         my @node_modules;
         
-        my $dir = file($base_file_name)->dir;
+        my $dir = file($base_file_name)->dir . '';
         
         while ($dir =~ /((.*)(?:^|\/)node_modules)(?=\/|$)/) {
             
@@ -243,6 +247,8 @@ sub resolve_require {
             
             $dir    = $2
         }
+        
+        WWW @node_modules;
         
         foreach my $node_module_dir (@node_modules) {
             my $resolved = $self->resolve_in_file_system(dir($node_module_dir)->file($require));
@@ -344,7 +350,7 @@ sub get_require_statements {
     if ($self->quick_n_dirty) {
         my @matches     = ($content =~ m/require \s* \(  ('|")  ([\w\/\.-]*)   \g{-2}   \)/gx);
         
-        return grep { $_ ne '"' && $_ ne "'" } @matches;
+        return \(grep { $_ ne '"' && $_ ne "'" } @matches);
         
     } else {
         my $extract_require_file = dir( File::ShareDir::dist_dir('Dist-Zilla-Plugin-Web') )->file('js/extract_require.js') . '';
@@ -366,7 +372,7 @@ sub get_require_statements {
         
         close($child_out);
         
-        return @{JSON->new->decode($res)};
+        return JSON->new->decode($res);
     }
 }
 
