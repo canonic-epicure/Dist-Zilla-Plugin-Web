@@ -7,7 +7,7 @@ BEGIN {
 	use_ok( 'Dist::Zilla::Plugin::Web::Bundle' );
 	use_ok( 'Dist::Zilla::Plugin::Web::Require' );
 	
-	use_ok( 'Dist::Zilla::Plugin::NPM::Package' );
+	use_ok( 'Dist::Zilla::Plugin::Web::NPM::Package' );
 }
 
 done_testing;

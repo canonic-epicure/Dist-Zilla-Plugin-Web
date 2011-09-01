@@ -8,12 +8,15 @@ with 'Dist::Zilla::Role::FileGatherer';
 # to allow `dzil run` commands
 with 'Dist::Zilla::Role::BuildRunner';
 
+with 'Dist::Zilla::Role::AfterBuild';
+
 use Dist::Zilla::File::FromCode;
 
 use JSON 2;
 use Path::Class;
 
 use File::ShareDir;
+use Cwd;
 
 
 has 'name' => (
@@ -132,6 +135,16 @@ has 'dependency' => (
 );
 
 
+has 'devDependency' => (
+    is          => 'rw',
+    
+    lazy        => 1,
+    
+    default     => sub { [] }
+);
+
+
+
 has 'engine' => (
     is          => 'rw',
     
@@ -196,9 +209,9 @@ sub convert_dependencies {
 	    
 	    my $dep = $_;
 	    
-	    $dep =~ m/([\w\-\.]+)\s*(.+)/;
+	    $dep =~ m/([\w\-\.]+)\s*(.*)/;
 	    
-	    $1 => $2;
+	    $1 => ($2 || '*');
 	    
 	} (@$deps);
 	
@@ -226,8 +239,42 @@ sub convert_engines {
 
 #================================================================================================================================================================================================================================================
 sub mvp_multivalue_args { 
-    qw( contributor dependency engine ) 
+    qw( contributor dependency devDependency engine ) 
 }
+
+
+#================================================================================================================================================================================================================================================
+sub after_build {
+    my ($self, $params) = @_;
+    
+    my $build_root  = $params->{ build_root };
+    
+    my $dir = getcwd;
+    
+    chdir($build_root);
+    
+    for my $package (keys(%{$self->convert_dependencies($self->dependency)})) {
+        my $res = `npm link $package`;
+        
+        chomp($res);
+        
+        $self->log($res);
+    }
+    
+    for my $package (keys(%{$self->convert_dependencies($self->devDependency)})) {
+        my $res = `npm link $package`;
+        
+        chomp($res);
+        
+        $self->log($res);
+    }
+    
+    chdir($dir);
+}
+
+
+
+
 
 
 no Moose;
@@ -241,7 +288,7 @@ __PACKAGE__->meta->make_immutable(inline_constructor => 0);
 
 In your F<dist.ini>:
 
-    [JSAN::NPM]
+    [Web::NPM::Package]
     
     name            = some-distro   ; lowercased distribution name if not provided
     version         = 1.2.3         ; version, appended with ".0" to conform semver
