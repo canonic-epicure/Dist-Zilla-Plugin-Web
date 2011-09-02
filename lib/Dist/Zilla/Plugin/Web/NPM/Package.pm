@@ -157,7 +157,7 @@ has 'engine' => (
 has 'bin' => (
     is          => 'rw',
     
-    default     => ''
+    default     => sub { [] }
 );
 
 
@@ -184,6 +184,7 @@ sub gather_files {
             
             $package->{ contributors }  = $self->contributor;
             $package->{ dependencies }  = $self->convert_dependencies($self->dependency) if @{$self->dependency} > 0;
+            $package->{ dependencies }  = $self->convert_dependencies($self->dependency) if @{$self->dependency} > 0;
             
             $package->{ engines }       = $self->convert_engines($self->engine) if @{$self->engine} > 0;
             
@@ -193,7 +194,7 @@ sub gather_files {
                 "lib" => "./lib"
             };            
             
-            $package->{ bin }           = $self->bin if $self->bin;
+            $package->{ bin }           = $self->convert_dependencies($self->bin) if @{$self->bin} > 0;
                         
             return JSON->new->utf8(1)->pretty(1)->encode($package)
         }
@@ -209,7 +210,7 @@ sub convert_dependencies {
 	    
 	    my $dep = $_;
 	    
-	    $dep =~ m/([\w\-\.]+)\s*(.*)/;
+	    $dep =~ m/   ['"]?  ([\w\-._]+)  ['"]?  \s*   (.*)/x;
 	    
 	    $1 => ($2 || '*');
 	    
@@ -239,7 +240,7 @@ sub convert_engines {
 
 #================================================================================================================================================================================================================================================
 sub mvp_multivalue_args { 
-    qw( contributor dependency devDependency engine ) 
+    qw( contributor dependency devDependency engine bin ) 
 }
 
 
@@ -254,6 +255,8 @@ sub after_build {
     chdir($build_root);
     
     for my $package (keys(%{$self->convert_dependencies($self->dependency)})) {
+        next if -d dir($build_root, "node_modules", $package);
+        
         my $res = `npm link $package`;
         
         chomp($res);
@@ -262,6 +265,8 @@ sub after_build {
     }
     
     for my $package (keys(%{$self->convert_dependencies($self->devDependency)})) {
+        next if -d dir($build_root, "node_modules", $package);
+        
         my $res = `npm link $package`;
         
         chomp($res);
@@ -310,7 +315,9 @@ In your F<dist.ini>:
     dependency      = bar >=1.0.2 <2.1.2                ; 
     
     engine          = node >=0.1.27 <0.1.30             ; note the singular spelling
-    engine          = dode >=0.1.27 <0.1.30             ; 
+    engine          = dode >=0.1.27 <0.1.30             ;
+    
+    bin             = bin_name ./bin/path/to.js 
 
     
 
@@ -319,5 +326,7 @@ In your F<dist.ini>:
 
 Generate the "package.json" file for your distribution, based on the content of "dist.ini"
 
+Link the dependencies (including "devDepencies" after build). Linking is not performed, if the distribution
+already contains the package in "node_modules"
 
 =cut
