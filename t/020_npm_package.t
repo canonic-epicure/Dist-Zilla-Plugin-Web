@@ -28,6 +28,8 @@ use Dist::Zilla::Tester;
     is_deeply($package->{ dependencies }, { 'foox-baz' => '1.0.0 - 2.9999.9999', 'barx-foo' => '<1.0.0 || >=2.3.1 <2.4.5 || >=2.5.2 <3.0.0' }, 'Correct dependencies');
     
     is_deeply($package->{ engines }, [ "node >=0.1.27 <0.1.30", "dode >=0.1.27 <0.1.30" ], 'Correct engines');
+    
+    is_deeply($package->{ bin }, { 'do_this' => 'bin/do_that.js', 'do_that' => 'bin/do_this.js' }, 'Correct binaries');
 }
 
 done_testing;
