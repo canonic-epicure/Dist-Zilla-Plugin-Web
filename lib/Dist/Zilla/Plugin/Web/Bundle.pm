@@ -128,7 +128,7 @@ sub process_component {
             my $minify = $componentInfo->{ minify } || '';
             
             if ($minify eq 'yui') {
-                my $yui     = dir( File::ShareDir::dist_dir('Dist-Zilla-Plugin-NPM'), 'minifiers' )->file('yuicompressor-2.4.6.jar') . '';
+                my $yui     = dir( File::ShareDir::dist_dir('Dist-Zilla-Plugin-Web'), 'minifiers' )->file('yuicompressor-2.4.6.jar') . '';
                 my $type    = $is_js ? 'js' : 'css';
                 
                 my ($child_out, $child_in);
