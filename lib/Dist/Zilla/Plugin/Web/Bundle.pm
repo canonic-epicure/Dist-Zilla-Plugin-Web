@@ -47,18 +47,17 @@ has 'npm_root' => (
 );
 
 
-#================================================================================================================================================================================================================================================
-sub gather_files {
-}
+has 'components' => (
+    is          => 'ro',
+    lazy        => 1,
+    builder     => '_build_components_info',
+);
 
 
 #================================================================================================================================================================================================================================================
-# need to build bundles in the "munge" phase - to allow other munge plugins to modify the sources
-sub munge_files {
-    my $self = shift;
-    
-    return unless -f $self->filename;
-    
+sub _build_components_info {
+    my ($self) = @_;
+
     my $content = file($self->filename)->slurp;
 
     #removing // style comments
@@ -70,7 +69,32 @@ sub munge_files {
     
     my $json = JSON->new->relaxed->allow_singlequote->allow_barekey;
 
-    my $components = $json->decode($content);
+    return $json->decode($content);
+}
+
+
+
+#================================================================================================================================================================================================================================================
+sub gather_files {
+}
+
+
+#================================================================================================================================================================================================================================================
+# need to build bundles in the "munge" phase - to allow other munge plugins to modify the sources
+sub munge_files {
+    my ($self) = @_;
+    
+    $self->process_components();
+}
+
+
+#================================================================================================================================================================================================================================================
+sub process_components {
+    my $self = shift;
+    
+    return unless -f $self->filename;
+    
+    my $components = $self->components;
     
     foreach my $component (keys(%$components)) {
         $self->process_component($components, $component);
@@ -130,7 +154,13 @@ sub process_component {
     });
     
     # only store the bundles that has "saveAs"     
-    $self->add_file($self->bundle_files->{ $component }) if $saveAs;
+    if ($saveAs) {
+        my $already_has_file    = $self->get_dzil_file($saveAs);
+        
+        $self->zilla->prune_file($already_has_file) if $already_has_file;
+        
+        $self->add_file($self->bundle_files->{ $component }); 
+    }
 }
 
 
@@ -161,8 +191,8 @@ sub get_entry_content {
 
 
 #================================================================================================================================================================================================================================================
-sub get_file_content {
-    my ($self, $file_name, $component) = @_;
+sub get_dzil_file {
+    my ($self, $file_name) = @_;
     
     my $found;
     
@@ -174,6 +204,16 @@ sub get_file_content {
             last;
         }
     }
+    
+    return $found;
+}
+
+
+#================================================================================================================================================================================================================================================
+sub get_file_content {
+    my ($self, $file_name, $component) = @_;
+    
+    my $found = $self->get_dzil_file($file_name);
     
     # return content of gathered file if found
     return $found->content if $found;
