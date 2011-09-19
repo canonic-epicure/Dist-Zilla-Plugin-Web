@@ -11,7 +11,7 @@ use Dist::Zilla::File::FromCode;
 
 use JSON -support_by_pp, -no_export;
 use Path::Class;
-use IPC::Open2;
+use IPC::Run qw( run );
 use File::ShareDir;
 use Capture::Tiny qw/capture/;
 
@@ -43,7 +43,7 @@ has 'npm_root' => (
     
     lazy    => 1,
     
-    default => sub { shift->_get_npm_root },    
+    builder => '_get_npm_root',    
 );
 
 
@@ -131,22 +131,13 @@ sub process_component {
                 my $yui     = dir( File::ShareDir::dist_dir('Dist-Zilla-Plugin-Web'), 'minifiers' )->file('yuicompressor-2.4.6.jar') . '';
                 my $type    = $is_js ? 'js' : 'css';
                 
-                my ($child_out, $child_in);
+                my ($child_out, $child_err);
+
+                my $success = run [ "java", "-jar", "$yui", "--type", "$type" ], '<', \$bundle_content, '>', \$child_out, '2>', \$child_err;
                 
-                my $pid     = open2($child_out, $child_in, "java -jar $yui --type $type");                
+                die "Error during minification with YUI: $child_err" unless $success;                
                 
-                print $child_in $bundle_content;
-                
-                close($child_in);
-                
-                waitpid( $pid, 0 );
-                my $child_exit_status = $? >> 8;
-                
-                die "Error during minification with YUI: $child_exit_status" if $child_exit_status;                
-                
-                $bundle_content = do { local $/; <$child_out> };
-                
-                close($child_out);
+                $bundle_content = $child_out;
             }
             
             return $bundle_content;
