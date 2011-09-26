@@ -1,6 +1,6 @@
 package Dist::Zilla::Plugin::Web::Bundle;
 
-# ABSTRACT: Bundle the library files into "tasks", using information from Components.JS 
+# ABSTRACT: Bundle the library files into "tasks", using information from components.json 
 
 use Moose;
 
@@ -14,6 +14,16 @@ use Path::Class;
 use IPC::Run qw( run );
 use File::ShareDir;
 use Capture::Tiny qw/capture/;
+
+
+has 'lazy' => (
+    isa     => 'Bool',
+    is      => 'rw',
+    
+    default => 0
+);
+
+
 
 has 'filename' => (
     isa     => 'Str',
@@ -99,6 +109,12 @@ sub process_components {
     foreach my $component (keys(%$components)) {
         $self->process_component($components, $component);
     }
+    
+    # unless the lazy flag is set (false by default) - generate the content of all bundles right away
+    # otherwise leave them, allowing to other mungers to modify the individual source files before bundling
+    unless ($self->lazy) {
+        $_->content foreach (values(%{$self->bundle_files})) ;
+    } 
 }
 
 
