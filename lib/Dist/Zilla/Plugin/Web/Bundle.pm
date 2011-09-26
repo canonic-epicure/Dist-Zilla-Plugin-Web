@@ -7,7 +7,7 @@ use Moose;
 with 'Dist::Zilla::Role::FileGatherer';
 with 'Dist::Zilla::Role::FileMunger';
 
-use Dist::Zilla::File::FromCode;
+use Dist::Zilla::File::Generated;
 
 use JSON -support_by_pp, -no_export;
 use Path::Class;
@@ -111,7 +111,7 @@ sub process_component {
     
     my $saveAs          = $componentInfo->{ saveAs };
     
-    $self->bundle_files->{ $component } = Dist::Zilla::File::FromCode->new({
+    $self->bundle_files->{ $component } = Dist::Zilla::File::Generated->new({
         
         name => $saveAs || "foo.js",
         
