@@ -1,6 +1,10 @@
 Release history for Dist::Zilla::Plugin::Web
 
 {{$NEXT}}
+        
+        - added PkgVersion and FileHeader plugins
+        - much improved Bundle plugin
+        - added 'links_deps' option to NPM::Package
 
 0.0.3     2011-09-10 17:56
 

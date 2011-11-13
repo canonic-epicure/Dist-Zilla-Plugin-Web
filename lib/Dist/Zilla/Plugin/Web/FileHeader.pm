@@ -1,5 +1,7 @@
 package Dist::Zilla::Plugin::Web::FileHeader;
 
+# ABSTRACT: Prepend header to files
+
 use Moose;
 use Path::Class;
 
@@ -61,6 +63,35 @@ sub munge_files {
         $file->content($header_content . $file->content);
     }
 }
+
+
+#================================================================================================================================================================================================================================================
+sub prepend_header_to_file {
+    my ($self, $file) = @_;
+    
+    return unless -e $self->header_filename;
+    
+    my $header_content  = file($self->header_filename)->slurp();
+    
+    my $version         = $self->zilla->version;
+    
+    my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+    
+    # perl is such an oldboy :)
+    $year += 1900;
+    
+    $header_content     =~ s/%v/$version/;  
+    $header_content     =~ s/%y/$year/;
+
+    my $file_content    = file($file)->slurp;
+    
+    my $fh              = file($file)->openw;
+    
+    print $fh $header_content . $file_content;
+    
+    $fh->close();
+}
+
 
 
 
