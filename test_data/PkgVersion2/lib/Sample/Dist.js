@@ -1,8 +1,4 @@
-//var jojo    = require('jojo')
-
-module.exports = require('joose').Class({
-    
-//    isa     : require('../Backend'),
+Class('Sample.Dist', {
     
     /*VERSION,*/
     
