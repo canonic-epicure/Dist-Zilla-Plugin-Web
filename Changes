@@ -1,6 +1,8 @@
 Release history for Dist::Zilla::Plugin::Web
 
 {{$NEXT}}
+
+0.0.4     2011-12-09 17:34
         
         - added PkgVersion and FileHeader plugins
         - much improved Bundle plugin
