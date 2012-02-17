@@ -4,6 +4,7 @@ package Dist::Zilla::Plugin::Web::FileHeader;
 
 use Moose;
 use Path::Class;
+use String::BOM qw(strip_bom_from_string);
 
 with 'Dist::Zilla::Role::FileMunger';
 with 'Dist::Zilla::Plugin::Web::Role::FileMatcher';
@@ -21,7 +22,7 @@ sub munge_files {
     
     return unless -e $self->header_filename;
     
-    my $header_content  = file($self->header_filename)->slurp();
+    my $header_content  = strip_bom_from_string(file($self->header_filename)->slurp() . "");
     
     my $version         = $self->zilla->version;
     
