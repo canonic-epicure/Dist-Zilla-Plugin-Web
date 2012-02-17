@@ -7,37 +7,15 @@ use Moose;
 use Path::Class;
 
 with 'Dist::Zilla::Role::FileMunger';
+with 'Dist::Zilla::Plugin::Web::Role::FileMatcher';
 
-
-has 'file_match' => (
-    is      => 'rw',
-
-    default => sub { [ '^lib/.*\\.js$' ] }
-);
-
-
-has 'exculde_match' => (
-    is      => 'rw',
-
-    default => sub { [] }
-);
-
-
-sub mvp_multivalue_args { qw( file_match exculde_match ) }
 
 
 sub munge_files {
     my ($self) = @_;
     
-    my $matches_regex = qr/\000/;
-    my $exclude_regex = qr/\000/;
-
-    $matches_regex = qr/$_|$matches_regex/ for (@{$self->file_match});
-    $exclude_regex = qr/$_|$exclude_regex/ for (@{$self->exculde_match});
-
-    for my $file (@{$self->zilla->files}) {
-        next unless $file->name =~ $matches_regex;
-        next if     $file->name =~ $exclude_regex;
+    $self->for_each_matched_file(sub {
+        my ($file)    = @_;
 
         my $content             = $file->content;
         my $content_copy        = $content;
@@ -63,7 +41,7 @@ sub munge_files {
         }
         
         $file->content($content_copy) if $content_copy ne $content;
-    }
+    });
 }
 
 
