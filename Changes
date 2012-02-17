@@ -2,6 +2,9 @@ Release history for Dist::Zilla::Plugin::Web
 
 {{$NEXT}}
 
+        - added StripBOM plugin
+        - factored out FileMatcher role
+
 0.0.4     2011-12-09 17:34
         
         - added PkgVersion and FileHeader plugins
