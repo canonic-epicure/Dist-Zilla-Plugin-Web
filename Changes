@@ -2,6 +2,8 @@ Release history for Dist::Zilla::Plugin::Web
 
 {{$NEXT}}
 
+        - added RelaxedVersion plugin
+
 0.0.5     2012-02-17 11:11
 
         - added StripBOM plugin
