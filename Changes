@@ -2,6 +2,9 @@ Release history for Dist::Zilla::Plugin::Web
 
 {{$NEXT}}
 
+        - Dzil 5.0 compatibility, bumped Dzil dependency
+        - bumped JSON dependency
+        
 0.0.6     2012-04-04 22:57
 
         - added RelaxedVersion plugin
